@@ -16,6 +16,13 @@
   5. 设置FrameBuffer
   6. 开始绘制
 
+ 
+ 总结：由于纹理的坐标原点是左下角，而屏幕的原点坐标是左上角，所以如果不对图片进行翻转，得到的图片会是反的。
+ 可以通过以下4中方法进行翻转：
+ 第一种：解压图片时,将图片源文件翻转
+ 第二种：直接从源纹理坐标数据修改
+ 第三种：修改片元着色器,纹理坐标
+ 第四种：修改顶点着色器,纹理坐标
  */
 
 #import "CSView.h"
@@ -95,6 +102,17 @@
         -0.5f, 0.5f, -1.0f,     0.0f, 1.0f,
         0.5f, -0.5f, -1.0f,     1.0f, 0.0f,
     };
+    //第二种：改变纹理坐标修改图片为正的
+//     GLfloat attrArr[] =
+//     {
+//     0.5f, -0.5f, 0.0f,        1.0f, 1.0f, //右下
+//     -0.5f, 0.5f, 0.0f,        0.0f, 0.0f, // 左上
+//     -0.5f, -0.5f, 0.0f,       0.0f, 1.0f, // 左下
+//     0.5f, 0.5f, 0.0f,         1.0f, 0.0f, // 右上
+//     -0.5f, 0.5f, 0.0f,        0.0f, 0.0f, // 左上
+//     0.5f, -0.5f, 0.0f,        1.0f, 1.0f, // 右下
+//     };
+
 
     //7. 处理顶点数据
     //顶点缓存区
@@ -185,7 +203,14 @@
     */
     CGRect rect = CGRectMake(0, 0, width, height);
 
-    //6. 使用默认方式绘制
+    //6. 使用默认方式绘制， 图片是反的
+//    CGContextDrawImage(spriteContext, rect, spriteImage);
+
+    //6.第一种： 将图片源文件翻转， 图片是正的
+    CGContextTranslateCTM(spriteContext, rect.origin.x, rect.origin.y);
+    CGContextTranslateCTM(spriteContext, 0, rect.size.height);
+    CGContextScaleCTM(spriteContext, 1.0, -1.0);
+    CGContextTranslateCTM(spriteContext, -rect.origin.x, -rect.origin.y);
     CGContextDrawImage(spriteContext, rect, spriteImage);
 
     //7. 画图完毕就释放上下文
