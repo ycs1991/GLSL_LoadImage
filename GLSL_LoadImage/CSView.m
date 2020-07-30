@@ -16,13 +16,14 @@
   5. 设置FrameBuffer
   6. 开始绘制
 
- 
+
  总结：由于纹理的坐标原点是左下角，而屏幕的原点坐标是左上角，所以如果不对图片进行翻转，得到的图片会是反的。
  可以通过以下4中方法进行翻转：
  第一种：解压图片时,将图片源文件翻转
  第二种：直接从源纹理坐标数据修改
  第三种：修改片元着色器,纹理坐标
  第四种：修改顶点着色器,纹理坐标
+ 第五种：旋转矩阵翻转图形,不翻转纹理
  */
 
 #import "CSView.h"
@@ -157,11 +158,48 @@
     //11.设置纹理采样器 sampler2D
     glUniform1i(glGetUniformLocation(self.myPrograme, "colorMap"), 0);
 
+    //第五种翻转图片方法
+    [self rotateTextureImage];
+
     //12.绘图
     glDrawArrays(GL_TRIANGLES, 0, 6);
 
     //13.从渲染缓存区显示到屏幕上
     [self.myContext presentRenderbuffer:GL_RENDERBUFFER];
+}
+
+//旋转矩阵翻转图形,不翻转纹理
+- (void)rotateTextureImage {
+    //注意，想要获取shader里面的变量，这里记得要在glLinkProgram后面，后面，后面！
+    //1. rotate等于shaderv.vsh中的uniform属性，rotateMatrix
+    GLuint rotate = glGetUniformLocation(self.myPrograme, "rotateMatrix");
+
+    //2.获取旋转的弧度
+    float radians = 180 * 3.14159f / 180.0f;
+    //3.求得弧度对于的sin\cos值
+    float s = sin(radians);
+    float c = cos(radians);
+
+    //4.因为在3D课程中用的是横向量，在OpenGL ES用的是列向量
+    /*
+     参考Z轴旋转矩阵
+     */
+    GLfloat zRotation[16] = {
+        c, -s, 0, 0,
+        s, c, 0, 0,
+        0, 0, 1, 0,
+        0, 0, 0, 1
+    };
+
+    //5.设置旋转矩阵
+    /*
+     glUniformMatrix4fv (GLint location, GLsizei count, GLboolean transpose, const GLfloat* value)
+     location : 对于shader 中的ID
+     count : 个数
+     transpose : 转置
+     value : 指针
+     */
+    glUniformMatrix4fv(rotate, 1, GL_FALSE, zRotation);
 }
 
 //加载纹理
